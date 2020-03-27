@@ -24,7 +24,7 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
-impl frame_system::Trait for Test {
+impl system::Trait for Test {
     type Origin = Origin;
     type Call = ();
     type Index = u64;

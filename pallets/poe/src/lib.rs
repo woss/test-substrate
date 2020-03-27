@@ -1,27 +1,30 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Codec, Decode, Encode};
-use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure, traits::Get, StorageMap,
-};
-// use serde::{Deserialize, Serialize};
-// use serde_json;
-use frame_system::ensure_signed;
-use sp_runtime::traits::{Hash, MaybeSerializeDeserialize};
-use sp_std::{fmt::Debug, vec::Vec};
+use codec::{Decode, Encode};
+use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+// use serde::ser::{Serialize, SerializeStruct, Serializer};
+
+use sp_runtime::traits::Hash;
+use sp_std::str;
+use sp_std::vec::Vec;
+use system::ensure_signed;
 
 /// The pallet's configuration trait.
-pub trait Trait: frame_system::Trait {
+pub trait Trait: system::Trait {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-    /// Generic rule trait
-    type Rule: Codec + Default + Copy + MaybeSerializeDeserialize + Debug;
-    /// test for the get rule
-    type GetRule: Get<Self::Rule>;
+    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    //     /// Generic rule trait
+    //     type Rule: Codec + Default + Copy + MaybeSerializeDeserialize + Debug;
+    //     /// test for the get rule
+    //     type GetRule: Get<Self::Rule>;
 }
 
 /// List of equipment that needs rules generated
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq)]
+/// this filed on serializing
+#[derive(Encode, Decode)]
 enum ForWhat {
     /// Any photo
     Photo = 0,
@@ -32,44 +35,72 @@ enum ForWhat {
     /// Any Smartphone
     SmartPhone = 3,
 }
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct Rule<Vec> {
-    rules: Vec, // parsable into JSON, what would be the best way to store it, encode the bytes?
-    version: u8, // 1,2,3
-    for_what: Vec, // a string, similar to rule
+#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
+pub struct Rule {
+    rules: Vec<u8>,
+    // parsable into JSON, what would be the best way to store it, encode the bytes?
+    version: i32,
+    // 1,2,3
+    for_what: &'static str, // a string, similar to rule
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct Proof<AccountId, Hash, BlockNumber> {
-    account_id: AccountId,
-    block_number: BlockNumber,
-    rules: Hash,
-    proof: Hash,
-    content_hash: Hash,
-    photo: bool,
-}
+/// JSON serializer
+// impl Serialize for Rule {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//     {
+//         let mut s = serializer.serialize_struct("Rule", 3)?;
+//         s.serialize_field("rules", &self.rules)?;
+//         s.serialize_field("version", &self.version)?;
+//         s.serialize_field("forWhat", &self.for_what);
+//         s.end()
+//     }
+// }
 
-// implement default
-impl<A, H, B> Default for Proof<A, H, B>
-where
-    A: Default,
-    H: Default,
-    B: Default,
-{
-    fn default() -> Self {
-        Proof {
-            account_id: A::default(),
-            block_number: B::default(),
-            proof: H::default(),
-            rules: H::default(),
-            content_hash: H::default(),
-            photo: true,
+impl Default for Rule {
+    fn default() -> Rule {
+        Rule {
+            rules: (b"[]").encode(),
+            for_what: "photo",
+            version: 1,
         }
     }
 }
+
+// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+// #[cfg_attr(feature = "std", derive(Debug))]
+// pub struct Proof<AccountId, Hash, BlockNumber, Rule> {
+//     account_id: AccountId,
+//     block_number: BlockNumber,
+//     rules: Vec<Rule>,
+//     proof: Hash,
+//     content_hash: Hash,
+//     photo: bool,
+// }
+//
+// // implement default
+// impl<A, H, B, R> Default for Proof<A, H, B, R>
+// where
+//     A: Default,
+//     H: Default,
+//     B: Default,
+//     R: Default,
+// {
+//     fn default() -> Self {
+//         Proof {
+//             account_id: A::default(),
+//             block_number: B::default(),
+//             proof: H::default(),
+//             rules: R::default(),
+//             content_hash: H::default(),
+//             photo: true,
+//         }
+//     }
+// }
 
 // The pallet's dispatchable functions.
 decl_module! {
@@ -77,23 +108,23 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 
          /// Rules for the PoE
-        const rule: Vec<u8> = (b"sdadsadasd").encode();
-        // const rule: Option<str> = Rule {
+        // const rule: Vec<u8> = r#"{
+        //         "code": 200,
+        //         "success": true,
+        //         "payload": {
+        //             "features": [
+        //                 "serde",
+        //                 "json"
+        //             ]
+        //         }
+        //     })"#.encode();
+        // const rule = Rule {
         //     rules: (b"[2,3,4,5,6]").encode(), // parsable into JSON, what would be the best way to store it, encode the bytes?
         //     version: 1,    // 1,2,3
         //     for_what: (b"photo").encode(), // a string, similar to rule
         // };
-        //
-        // const j = json!({
-        //     "code": 200,
-        //     "success": true,
-        //     "payload": {
-        //         "features": [
-        //             "serde",
-        //             "json"
-        //         ]
-        //     }
-        // });
+
+
 
         // Initializing errors
         // this includes information about your errors in the node's metadata.
@@ -114,10 +145,23 @@ decl_module! {
             ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
 
 
-            let data_hash =<T as frame_system::Trait>::Hashing::hash(b"sdadsadasd");
+
+            // const j: &str = r#"{
+            //     "code": 200,
+            //     "success": true,
+            //     "payload": {
+            //         "features": [
+            //             "serde",
+            //             "json"
+            //         ]
+            //     }
+            // })"#;
+// let v: Value = serde_json::from_str(j);
+
+            let data_hash =<T as system::Trait>::Hashing::hash(b"sdadsadasd");
 
             // Call the `system` pallet to get the current block number
-            let current_block = <frame_system::Module<T>>::block_number();
+            let current_block = <system::Module<T>>::block_number();
             //
             // let p = Proof {
             //     account_id : sender.clone(),
@@ -165,7 +209,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
+        AccountId = <T as system::Trait>::AccountId,
     {
         /// Just a dummy event.
         /// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
@@ -202,8 +246,9 @@ decl_storage! {
     trait Store for Module<T: Trait> as PoEModule
     {
         // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
-         Proofs2: map hasher(blake2_128_concat) Vec<u8> => Proof<T::AccountId, T::Hash, T::BlockNumber>;
+        //  Proofs2: map hasher(blake2_128_concat) Vec<u8> => Proof<T::AccountId, T::Hash, T::BlockNumberm T::Rule>;
          Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
+         // Rules get(fn current_rules): Vec<Rules>;
 
     }
 }

@@ -2912,7 +2912,7 @@ dependencies = [
  "parity-scale-codec",
  "rand 0.7.3",
  "safe-mix",
- "serde_json",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
