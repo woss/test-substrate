@@ -110,6 +110,12 @@ package = 'pallet-template'
 path = '../pallets/template'
 version = '2.0.0-alpha.5'
 
+[dependencies.poe]
+default-features = false
+package = 'pallet-poe'
+path = '../pallets/poe'
+version = '0.1.0'
+
 [dependencies.timestamp]
 default-features = false
 package = 'pallet-timestamp'
@@ -119,6 +125,7 @@ version = '2.0.0-alpha.5'
 default-features = false
 package = 'pallet-transaction-payment'
 version = '2.0.0-alpha.5'
+
 [build-dependencies.wasm-builder-runner]
 package = 'substrate-wasm-builder-runner'
 version = '1.0.5'
@@ -150,5 +157,5 @@ std = [
     'system/std',
     'timestamp/std',
     'transaction-payment/std',
-    'template/std',
+    'poe/std',
 ]

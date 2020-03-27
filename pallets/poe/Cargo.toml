@@ -1,12 +1,15 @@
 [package]
 authors = ['Anonymous']
-description = 'FRAME pallet template'
+description = 'Proof-Of-existence'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'poe'
+name = 'pallet-poe'
 repository = 'https://github.com/paritytech/substrate/'
-version = '2.0.0-alpha.5'
+version = '0.1.0'
+
+[dependencies]
+serde_json = "1.0"
 
 [dependencies.codec]
 default-features = false
@@ -22,22 +25,29 @@ version = '2.0.0-alpha.5'
 default-features = false
 version = '1.0.0'
 
-[dependencies.system]
-default-features = false
-package = 'frame-system'
-version = '2.0.0-alpha.5'
-
-[dev-dependencies.sp-core]
+[dependencies.frame-system]
 default-features = false
 version = '2.0.0-alpha.5'
 
-[dev-dependencies.sp-io]
+[dependencies.sp-core]
 default-features = false
 version = '2.0.0-alpha.5'
 
-[dev-dependencies.sp-runtime]
+[dependencies.sp-io]
 default-features = false
 version = '2.0.0-alpha.5'
+
+[dependencies.sp-runtime]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-std]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.rand]
+optional = true
+version= '0.7.2'
 
 [features]
 default = ['std']
@@ -45,5 +55,10 @@ std = [
     'codec/std',
     'frame-support/std',
     'safe-mix/std',
-    'system/std',
+    'frame-system/std',
+    'sp-std/std',
+    'sp-runtime/std',
+    'sp-core/std',
+    'rand'
+
 ]

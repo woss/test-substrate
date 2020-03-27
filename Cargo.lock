@@ -1859,19 +1859,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kitties"
-version = "2.0.0-alpha.5"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "safe-mix",
- "sp-core",
- "sp-io",
- "sp-runtime",
-]
-
-[[package]]
 name = "kv-log-macro"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2685,6 +2672,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
+ "pallet-poe",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-template",
@@ -2912,6 +2900,22 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-poe"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "safe-mix",
+ "serde_json",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 
@@ -3268,19 +3272,6 @@ name = "pkg-config"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
-
-[[package]]
-name = "poe"
-version = "2.0.0-alpha.5"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "safe-mix",
- "sp-core",
- "sp-io",
- "sp-runtime",
-]
 
 [[package]]
 name = "ppv-lite86"
