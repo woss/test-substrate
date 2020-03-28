@@ -2,10 +2,9 @@
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::traits::Hash;
-use sp_std::{boxed::Box, str, vec, vec::Vec};
+use sp_std::{vec,vec::Vec};
 
 use system::ensure_signed;
-
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -66,23 +65,55 @@ decl_event!(
     }
 );
 
+
+#[derive(Encode, Decode)]
+struct RuleOperation {
+    op: Vec<u8>,
+    what: Vec<u8>,
+    output: bool,
+}
+
 #[derive(Encode, Decode)]
 struct Rule {
     name: Vec<u8>,
     version: u32,
-    ops: Vec<Box<u32>>,
+    // ops: Vec<RuleOperation>,
+    ops: Vec<u32>,
+
 }
+
+// JS type
+// {
+// "RuleOperation": {
+//     "op": "Vec<u8>",
+//     "what": "Vec<u8>",
+//     "output": "bool",
+//   },
+//   "Rule": {
+//     "name": "Vec<u8>",
+//     "version": "u32",
+//     "ops": "Vec<RuleOperation>"
+//   }
+// }
+
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 
          /// Rules for the PoE
-        const rule: Vec<u8> = Rule {
+        const rule: Rule = Rule {
             name: b"rule 1".to_vec(),
             version: 1,
-            ops: vec![Box::new(2)]
-        }.encode();
+            // ops: vec![
+            //     RuleOperation {
+            //         op: b"init".to_vec(),
+            //         what: b"object".to_vec(),
+            //         output: true
+            //     }
+            // ]
+            ops: vec![2]
+        };
 
         const demo: Vec<u8> =b"demo".encode();
 
