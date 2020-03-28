@@ -21,18 +21,6 @@ pub trait Trait: system::Trait {
 // have a rule per type serialized as protobuf or cbor in the metadata
 // have a Rule struct that is serialized or encoded
 
-/// List of equipment that needs rules generated
-#[derive(Encode, Decode)]
-enum ForWhat {
-    /// Any photo
-    Photo = 0,
-    /// Any camera, not a smartphone
-    Camera = 1,
-    /// Any Lens
-    Lens = 2,
-    /// Any Smartphone
-    SmartPhone = 3,
-}
 
 // #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 // #[cfg_attr(feature = "std", derive(Debug))]
@@ -78,6 +66,20 @@ decl_event!(
     }
 );
 
+/// List of equipment that needs rules generated
+#[derive(Encode, Decode)]
+enum ForWhat {
+    /// Any photo
+    Photo = 0,
+    /// Any camera, not a smartphone
+    Camera = 1,
+    /// Any Lens
+    Lens = 2,
+    /// Any Smartphone
+    SmartPhone = 3,
+}
+
+/// Operations that will be performed
 #[derive(Encode, Decode)]
 struct RuleOperation {
     op: Vec<u8>,
@@ -85,13 +87,13 @@ struct RuleOperation {
     output: bool,
 }
 
+/// Rule which must be applied to the PoE
 #[derive(Encode, Decode)]
 struct Rule {
     name: Vec<u8>,
     for_what: ForWhat,
     version: u32,
     ops: Vec<RuleOperation>,
-    // ops: Vec<u32>,
 }
 
 // JS type
@@ -137,7 +139,18 @@ decl_module! {
                     op: b"init".to_vec(),
                     what: b"object".to_vec(),
                     output: true
+                },
+                RuleOperation {
+                    op: b"read_bytes".to_vec(),
+                    what: b"image".to_vec(),
+                    output: true
+                },
+                RuleOperation {
+                    op: b"read_metadata".to_vec(),
+                    what: b"image".to_vec(),
+                    output: true
                 }
+
             ]
         };
 
