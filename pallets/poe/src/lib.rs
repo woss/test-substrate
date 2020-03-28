@@ -1,16 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
-use codec::{Decode, Encode};
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-// use serde::ser::{Serialize, SerializeStruct, Serializer};
-
+use parity_scale_codec::{Decode, Encode};
 use sp_runtime::traits::Hash;
-use sp_std::str;
-use sp_std::vec::Vec;
+use sp_std::{boxed::Box, str, vec, vec::Vec};
+
 use system::ensure_signed;
+
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -22,54 +17,10 @@ pub trait Trait: system::Trait {
     //     type GetRule: Get<Self::Rule>;
 }
 
-/// List of equipment that needs rules generated
-/// this filed on serializing
-#[derive(Encode, Decode)]
-enum ForWhat {
-    /// Any photo
-    Photo = 0,
-    /// Any camera, not a smartphone
-    Camera = 1,
-    /// Any Lens
-    Lens = 2,
-    /// Any Smartphone
-    SmartPhone = 3,
-}
-#[derive(PartialEq, Eq, Clone, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-#[cfg_attr(feature = "std", serde(deny_unknown_fields))]
-pub struct Rule {
-    rules: Vec<u8>,
-    // parsable into JSON, what would be the best way to store it, encode the bytes?
-    version: i32,
-    // 1,2,3
-    for_what: &'static str, // a string, similar to rule
-}
-
-/// JSON serializer
-// impl Serialize for Rule {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         let mut s = serializer.serialize_struct("Rule", 3)?;
-//         s.serialize_field("rules", &self.rules)?;
-//         s.serialize_field("version", &self.version)?;
-//         s.serialize_field("forWhat", &self.for_what);
-//         s.end()
-//     }
-// }
-
-impl Default for Rule {
-    fn default() -> Rule {
-        Rule {
-            rules: (b"[]").encode(),
-            for_what: "photo",
-            version: 1,
-        }
-    }
-}
+// What i want to accomplish
+// have a rule per type encoded as a json-string and added to the const
+// have a rule per type serialized as protobuf or cbor in the metadata
+// have a Rule struct that is serialized or encoded
 
 // #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 // #[cfg_attr(feature = "std", derive(Debug))]
@@ -102,29 +53,38 @@ impl Default for Rule {
 //     }
 // }
 
+// The pallet's events
+decl_event!(
+    pub enum Event<T>
+    where
+        AccountId = <T as system::Trait>::AccountId,
+    {
+        /// Event emitted when a proof has been claimed.
+        ClaimCreated(AccountId, Vec<u8>),
+        /// Event emitted when a claim is revoked by the owner.
+        ClaimRevoked(AccountId, Vec<u8>),
+    }
+);
+
+#[derive(Encode, Decode)]
+struct Rule {
+    name: Vec<u8>,
+    version: u32,
+    ops: Vec<Box<u32>>,
+}
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 
          /// Rules for the PoE
-        // const rule: Vec<u8> = r#"{
-        //         "code": 200,
-        //         "success": true,
-        //         "payload": {
-        //             "features": [
-        //                 "serde",
-        //                 "json"
-        //             ]
-        //         }
-        //     })"#.encode();
-        // const rule = Rule {
-        //     rules: (b"[2,3,4,5,6]").encode(), // parsable into JSON, what would be the best way to store it, encode the bytes?
-        //     version: 1,    // 1,2,3
-        //     for_what: (b"photo").encode(), // a string, similar to rule
-        // };
+        const rule: Vec<u8> = Rule {
+            name: b"rule 1".to_vec(),
+            version: 1,
+            ops: vec![Box::new(2)]
+        }.encode();
 
-
+        const demo: Vec<u8> =b"demo".encode();
 
         // Initializing errors
         // this includes information about your errors in the node's metadata.
@@ -144,19 +104,6 @@ decl_module! {
             // Verify that the specified proof has not been claimed yet or error with the message
             ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
 
-
-
-            // const j: &str = r#"{
-            //     "code": 200,
-            //     "success": true,
-            //     "payload": {
-            //         "features": [
-            //             "serde",
-            //             "json"
-            //         ]
-            //     }
-            // })"#;
-// let v: Value = serde_json::from_str(j);
 
             let data_hash =<T as system::Trait>::Hashing::hash(b"sdadsadasd");
 
@@ -205,23 +152,6 @@ decl_module! {
     }
 }
 
-// The pallet's events
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as system::Trait>::AccountId,
-    {
-        /// Just a dummy event.
-        /// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
-        /// To emit this event, we call the deposit function, from our runtime functions
-        // SomethingStored(u32, AccountId),
-        /// Event emitted when a proof has been claimed.
-        ClaimCreated(AccountId, Vec<u8>),
-        /// Event emitted when a claim is revoked by the owner.
-        ClaimRevoked(AccountId, Vec<u8>),
-    }
-);
-
 // The pallet's errors
 decl_error! {
     pub enum Error for Module<T: Trait> {
@@ -246,7 +176,7 @@ decl_storage! {
     trait Store for Module<T: Trait> as PoEModule
     {
         // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
-        //  Proofs2: map hasher(blake2_128_concat) Vec<u8> => Proof<T::AccountId, T::Hash, T::BlockNumberm T::Rule>;
+        //  Proofs2: map hasher(blake2_128_concat) Vec<u8> => Proof<T::AccountId, T::Hash, T::BlockNumber, T::Rule>;
          Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
          // Rules get(fn current_rules): Vec<Rules>;
 
