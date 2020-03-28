@@ -2,7 +2,7 @@
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::traits::Hash;
-use sp_std::{vec,vec::Vec};
+use sp_std::{vec, vec::Vec};
 
 use system::ensure_signed;
 
@@ -20,6 +20,19 @@ pub trait Trait: system::Trait {
 // have a rule per type encoded as a json-string and added to the const
 // have a rule per type serialized as protobuf or cbor in the metadata
 // have a Rule struct that is serialized or encoded
+
+/// List of equipment that needs rules generated
+#[derive(Encode, Decode)]
+enum ForWhat {
+    /// Any photo
+    Photo = 0,
+    /// Any camera, not a smartphone
+    Camera = 1,
+    /// Any Lens
+    Lens = 2,
+    /// Any Smartphone
+    SmartPhone = 3,
+}
 
 // #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 // #[cfg_attr(feature = "std", derive(Debug))]
@@ -65,7 +78,6 @@ decl_event!(
     }
 );
 
-
 #[derive(Encode, Decode)]
 struct RuleOperation {
     op: Vec<u8>,
@@ -76,26 +88,40 @@ struct RuleOperation {
 #[derive(Encode, Decode)]
 struct Rule {
     name: Vec<u8>,
+    for_what: ForWhat,
     version: u32,
-    // ops: Vec<RuleOperation>,
-    ops: Vec<u32>,
-
+    ops: Vec<RuleOperation>,
+    // ops: Vec<u32>,
 }
 
 // JS type
-// {
-// "RuleOperation": {
-//     "op": "Vec<u8>",
-//     "what": "Vec<u8>",
-//     "output": "bool",
+// [
+//   {
+//     "ForWhat": {
+//       "_enum": [
+//         "Photo",
+//         "Camera",
+//         "Lens",
+//         "SmartPhone"
+//       ]
+//     }
 //   },
-//   "Rule": {
-//     "name": "Vec<u8>",
-//     "version": "u32",
-//     "ops": "Vec<RuleOperation>"
+//   {
+//     "RuleOperation": {
+//       "op": "Vec<u8>",
+//       "what": "Vec<u8>",
+//       "output": "bool"
+//     }
+//   },
+//   {
+//     "Rule": {
+//       "name": "Vec<u8>",
+//       "version": "u32",
+//       "for_what": "ForWhat",
+//       "ops": "Vec<RuleOperation>"
+//     }
 //   }
-// }
-
+// ]
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
@@ -105,14 +131,14 @@ decl_module! {
         const rule: Rule = Rule {
             name: b"rule 1".to_vec(),
             version: 1,
-            // ops: vec![
-            //     RuleOperation {
-            //         op: b"init".to_vec(),
-            //         what: b"object".to_vec(),
-            //         output: true
-            //     }
-            // ]
-            ops: vec![2]
+            for_what: ForWhat::Photo,
+            ops: vec![
+                RuleOperation {
+                    op: b"init".to_vec(),
+                    what: b"object".to_vec(),
+                    output: true
+                }
+            ]
         };
 
         const demo: Vec<u8> =b"demo".encode();
